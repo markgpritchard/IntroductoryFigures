@@ -1,0 +1,95 @@
+\documentclass{minimal}
+
+\usepackage{tikz}
+\usetikzlibrary{
+	arrows.meta,
+	decorations.pathmorphing,
+	backgrounds,
+	positioning,
+	fit,
+	petri,
+	shapes.misc,
+	graphs,
+	quotes,
+	decorations.pathreplacing,
+	calc,
+}
+
+%\input{tikz_styles.tex}  % styles used in figures
+\tikzset{infectious/.style={
+		% The shape:
+		rectangle,rounded corners=2mm,
+		% The size:
+		minimum size=8mm,
+		% The border:
+		very thick,
+		draw=red!50!black!50, % 50% red and 50% black,
+		% and that mixed with 50% white
+		% The filling:
+		top color=white, % a shading that is white at the top...
+		bottom color=red!50!black!20, % and something else at the bottom
+		% make sure text aligns properly 
+		text height=1.5ex,text depth=.25ex,
+}}
+
+\tikzset{noninfectious/.style={
+		% The shape:
+		rectangle,rounded corners=2mm,
+		% The size:
+		minimum size=8mm,
+		% The rest
+		very thick,draw=black!50,
+		top color=white,bottom color=black!20,
+		% make sure text aligns properly 
+		text height=1.5ex,text depth=.25ex,
+}}
+
+\tikzset{supinfectious/.style={
+		% The shape:
+		rectangle,rounded corners=2mm,
+		% The size:
+		minimum size=9.5mm,
+		% The border:
+		very thick,
+		draw=red!50!black!50, % 50% red and 50% black,
+		% and that mixed with 50% white
+		% The filling:
+		top color=white, % a shading that is white at the top...
+		bottom color=red!50!black!20, % and something else at the bottom
+		% make sure text aligns properly 
+		text height=1.5ex,text depth=.25ex,
+}}
+
+\tikzset{supnoninfectious/.style={
+		% The shape:
+		rectangle,rounded corners=2mm,
+		% The size:
+		minimum size=9.5mm,
+		% The rest
+		very thick,draw=black!50,
+		top color=white,bottom color=black!20,
+		% make sure text aligns properly 
+		text height=1.5ex,text depth=.25ex,
+}}
+
+\begin{document}
+	
+\pagestyle{empty}
+		
+\begin{tikzpicture}[>={Stealth[round]},thick,black!50,text=black,
+	every new ->/.style={shorten >=1pt},
+	graphs/every graph/.style={edges=rounded corners}]
+	\graph [grow right sep=8mm, branch down=7mm] {
+		s/"$s$" [noninfectious,align here] {"$s$"} ->[dashed,red!50!black!50,"$\beta\,[i_1+i_2]$"]
+		i1/"$i_1$" [infectious,xshift=8mm] {"$i_1$"} ->[black!50,"$2\gamma$"]		
+		i2/"$i_2$" [infectious,xshift=8mm] {"$i_2$"} ->[black!50,"$2\gamma$"]
+		r/"$r$" [noninfectious,xshift=8mm] {"$r$"} ;
+	};
+	\draw [->,shorten >= -1pt] ($(s.north west) + (-4mm,4mm) $) to [edge label=$\mu\,n$,color=black!50] ($ (s.north west)$);
+	\draw [->,shorten <= -2.5pt] ($(s.south east)$) to [edge label'=$\mu$,color=black!50] ($ (s.south east) + (4mm,-4mm) $);
+	\draw [->,shorten <= -2.5pt] ($(i1.south east)$) to [edge label'=$\mu$,color=black!50] ($ (i1.south east) + (4mm,-4mm) $);
+	\draw [->,shorten <= -2.5pt] ($(i2.south east)$) to [edge label'=$\mu$,color=black!50] ($ (i2.south east) + (4mm,-4mm) $);
+	\draw [->,shorten <= -2.5pt] ($(r.south east)$) to [edge label'=$\mu$,color=black!50] ($ (r.south east) + (4mm,-4mm) $);
+\end{tikzpicture}
+
+\end{document}
