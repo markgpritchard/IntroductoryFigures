@@ -124,11 +124,11 @@ For an `Axis3`, the `z` value may be provided alone, which assumes `x = y = 0`.
     `nothing`, no extension to the axes is performed.
 
 """
-setvalue!(axis::Axis, y::Real = 0) = setvalue!(axis, 0, y)
+setvalue!(axis::Axis, y::Real=0) = setvalue!(axis, 0, y)
 setvalue!(axis::Axis, x, y) = scatter!(axis, [x], [y], markersize = 0)
 setvalue!(axis::Axis3, z::Real = 0) = setvalue!(axis, 0, 0, z)
 setvalue!(axis::Axis3, x, y, z) = scatter!(axis, [x], [y], [z], markersize = 0)
-setvalue!(axis, x::Nothing) = nothing 
+setvalue!(::Any, ::Nothing) = nothing 
 setvalue!(axis, xy::Tuple) = setvalue!(axis, xy...)
 setorigin!(axis) = setvalue!(axis)
 

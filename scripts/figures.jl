@@ -29,14 +29,17 @@ sirintroplot = let
 
         fig = Figure(; size=( 500, 350 ))
 
-        ga = GridLayout(fig[1, 0:2])
+        ga = GridLayout(fig[1, 1:2])
+        gb = GridLayout(fig[2, 1])
+        gc = GridLayout(fig[2, 2])
+
         lt1 = LTeX(ga[1, 1], td1; tellwidth=false)
         lt2 = LTeX(ga[1, 2], td2; tellwidth=false)
 
-        ax1a = Axis(fig[2, 1])
-        ax1b = Axis(fig[3, 1])
-        ax2a = Axis(fig[2, 2])
-        ax2b = Axis(fig[3, 2])
+        ax1a = Axis(gb[1, 1])
+        ax1b = Axis(gb[2, 1])
+        ax2a = Axis(gc[1, 1])
+        ax2b = Axis(gc[2, 1])
 
         lines!(
             ax1a, sol1.t, [ sol1.u[t][1] for t ∈ eachindex(sol1.t) ]; 
@@ -61,26 +64,28 @@ sirintroplot = let
         linkaxes!(ax1a, ax1b, ax2a, ax2b)
         formataxis!(ax1a; hidex=true)
         formataxis!(ax1b)
-        formataxis!(ax2a; hidex=true, hidey=true)
-        formataxis!(ax2b; hidey=true)
+        formataxis!(ax2a; hidex=true)
+        formataxis!(ax2b)
 
-        Label(
-            fig[2, 0], L"Proportion\\infectious$$"; 
-            fontsize=11.84, rotation=π/2, tellheight=false
-        )
-        Label(
-            fig[3, 0], L"Generation \\ interval$$"; 
-            fontsize=11.84, rotation=π/2, tellheight=false
-        )
-        Label(fig[4, 1:2], L"Time, multiple of $\gamma$"; fontsize=11.84, tellwidth=false)
+        for gl ∈ [ gb, gc ]
+            Label(
+                gl[1, 0], L"Proportion\\infectious$$"; 
+                fontsize=11.84, rotation=π/2, tellheight=false
+            )
+            Label(
+                gl[2, 0], L"Generation \\ interval$$"; 
+                fontsize=11.84, rotation=π/2, tellheight=false
+            )
+            Label(gl[3, 1], L"Time, multiple of $\gamma$"; fontsize=11.84, tellwidth=false)
+    
+            colgap!(gl, 1, 5)
+            rowgap!(gl, 2, 5)
+        end
 
-        colgap!(fig.layout, 1, 5)
-        rowgap!(fig.layout, 3, 5)
 
         labelplots!(
-            [ "A", "B", "C", "D" ], 
-            [ ga, ga, fig.layout, fig.layout ]; 
-            cols=[ 1, 2, 0, 2 ], rows=[ 1, 1, 2, 2 ]
+            [ "A", "B", "C", "D" ], [ ga, ga, gb, gc ]; 
+            cols=[ 1, 2, 0, 0 ], rows=1
         )
         fig
     end
