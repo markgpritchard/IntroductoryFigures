@@ -408,7 +408,6 @@ interventionsplot = let
             [ LineElement(color=COLOURVECTOR[i]) for i ∈ 1:4 ],
             [ "England", "Northern Ireland", "Scotland", "Wales" ]
         )
-
         formataxis!(leg)
 
         for r ∈ 1:2 rowgap!(fig.layout, r, 5) end
@@ -419,3 +418,69 @@ interventionsplot = let
 end
 
 safesave(plotsdir("interventionsplot.pdf"), interventionsplot)
+
+
+indexplot = let 
+    fig = with_theme(theme_latexfonts()) do
+        fig = Figure(; size=( 500, 300 ))
+        axs = [ 
+            Axis(
+                fig[1, i]; 
+                xticks=(
+                    Dates.value.(
+                        Date.(
+                            [ "2020-01-01", "2021-01-01", "2022-01-01", "2023-01-01" ]
+                        ) .- Date("2020-01-01")
+                    ),
+                    [ "2020", "2021", "2022", "2023" ]
+                ),
+            ) 
+            for i ∈ [ 1, 3 ]
+        ]
+
+        for region ∈ 1:4 
+            inds = findall(x -> x == region, df.RegionId)
+            lines!(
+                axs[1], 
+                Dates.value.(df.Date[inds] .- Date("2020-01-01")), 
+                df.GovernmentResponseIndex_WeightedAverage[inds]; 
+                color=COLOURVECTOR[region],
+            )            
+            lines!(
+                axs[2], 
+                Dates.value.(df.Date[inds] .- Date("2020-01-01")), 
+                df.StringencyIndex_WeightedAverage[inds]; 
+                color=COLOURVECTOR[region],
+            )     
+        end
+
+        formataxis!(axs[1];)
+        formataxis!(axs[2];)
+        linkaxes!(axs...)
+
+        Label(
+            fig[1, 0], "Government response index"; 
+            fontsize=11.84, rotation=π/2, tellheight=false,
+        )
+        Label(
+            fig[1, 2], "Stringency index"; 
+            fontsize=11.84, rotation=π/2, tellheight=false,
+        )
+        Label(fig[2, 1:3], "Date"; fontsize=11.84, tellwidth=false)
+
+        leg = Legend(
+            fig[0, 0:3],
+            [ LineElement(color=COLOURVECTOR[i]) for i ∈ 1:4 ],
+            [ "England", "Northern Ireland", "Scotland", "Wales" ]
+        )
+        formataxis!(leg)
+
+        for c ∈ [ 1, 3 ] colgap!(fig.layout, c, 5) end
+        for r ∈ 1:2 rowgap!(fig.layout, r, 5) end
+            
+        fig
+    end
+    fig
+end
+
+safesave(plotsdir("indexplot.pdf"), indexplot)
