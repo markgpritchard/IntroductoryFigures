@@ -422,10 +422,10 @@ safesave(plotsdir("interventionsplot.pdf"), interventionsplot)
 
 indexplot = let 
     fig = with_theme(theme_latexfonts()) do
-        fig = Figure(; size=( 500, 300 ))
-        axs = [ 
+        fig = Figure(; size=( 500, 350 ))
+        axs1 = [ 
             Axis(
-                fig[1, i]; 
+                fig[i, 1]; 
                 xticks=(
                     Dates.value.(
                         Date.(
@@ -434,49 +434,68 @@ indexplot = let
                     ),
                     [ "2020", "2021", "2022", "2023" ]
                 ),
+                #yticks=WilkinsonTicks(4),
             ) 
-            for i ∈ [ 1, 3 ]
+            for i ∈ 1:4 
+        ]
+        axs2 = [ 
+            Axis(
+                fig[i, 3]; 
+                xticks=(
+                    Dates.value.(
+                        Date.(
+                            [ "2020-01-01", "2021-01-01", "2022-01-01", "2023-01-01" ]
+                        ) .- Date("2020-01-01")
+                    ),
+                    [ "2020", "2021", "2022", "2023" ]
+                ),
+                #yticks=WilkinsonTicks(4)
+            ) 
+            for i ∈ 1:4 
         ]
 
         for region ∈ 1:4 
             inds = findall(x -> x == region, df.RegionId)
             lines!(
-                axs[1], 
+                axs1[region], 
                 Dates.value.(df.Date[inds] .- Date("2020-01-01")), 
                 df.GovernmentResponseIndex_WeightedAverage[inds]; 
                 color=COLOURVECTOR[region],
             )            
             lines!(
-                axs[2], 
+                axs2[region], 
                 Dates.value.(df.Date[inds] .- Date("2020-01-01")), 
                 df.StringencyIndex_WeightedAverage[inds]; 
                 color=COLOURVECTOR[region],
-            )     
+            )   
+            for ax ∈ [ axs1[region], axs2[region] ]
+                text!(
+                    ax, 
+                    Dates.value(Date("2023-01-01") - Date("2020-01-01")),
+                    maximum(df.StringencyIndex_WeightedAverage); 
+                    text=[ "England", "Northern Ireland", "Scotland", "Wales" ][region],
+                    align=( :right, :top ),
+                    fontsize=11.84
+                )
+                formataxis!(ax; hidex=(region != 4))
+            end
         end
 
-        formataxis!(axs[1];)
-        formataxis!(axs[2];)
-        linkaxes!(axs...)
+
+        linkaxes!(axs1..., axs2...)
 
         Label(
-            fig[1, 0], "Government response index"; 
+            fig[1:4, 0], "Government response index"; 
             fontsize=11.84, rotation=π/2, tellheight=false,
         )
         Label(
-            fig[1, 2], "Stringency index"; 
+            fig[1:4, 2], "Stringency index"; 
             fontsize=11.84, rotation=π/2, tellheight=false,
         )
-        Label(fig[2, 1:3], "Date"; fontsize=11.84, tellwidth=false)
-
-        leg = Legend(
-            fig[0, 0:3],
-            [ LineElement(color=COLOURVECTOR[i]) for i ∈ 1:4 ],
-            [ "England", "Northern Ireland", "Scotland", "Wales" ]
-        )
-        formataxis!(leg)
+        Label(fig[5, 1:3], "Date"; fontsize=11.84, tellwidth=false)
 
         for c ∈ [ 1, 3 ] colgap!(fig.layout, c, 5) end
-        for r ∈ 1:2 rowgap!(fig.layout, r, 5) end
+        rowgap!(fig.layout, 4, 5)
             
         fig
     end
