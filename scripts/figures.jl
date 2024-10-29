@@ -115,6 +115,15 @@ using CSV, DataFrames, Dates
 # UK-wide data 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+const POPULATION2020 = [  
+    # values from 
+    # https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/populationestimatesforukenglandandwalesscotlandandnorthernireland/mid2020/ukpopestimatesmid2020on2021geography.xls
+    56_550_138,  # ENGLAND
+    1_895_510,  # NORTHERN IRELAND
+    5_466_000,  # SCOTLAND
+    3_169_586,  # WALES
+]
+
 df = CSV.read(
     datadir("exp_raw", "OxCGRT_fullwithnotes_GBR_v1.csv"), DataFrame
 )
@@ -208,14 +217,92 @@ leftjoin!(df, regioncodedf; on=:RegionCode)
 df
 
 
+## ONS data 
+
+onsenglanddf = CSV.read(
+    datadir("exp_raw", "20230324covidinfectionsurveyheadlinedataset_england.csv"), DataFrame;
+    header=5,
+)
+onsnidf = CSV.read(
+    datadir("exp_raw", "20230324covidinfectionsurveyheadlinedataset_ni.csv"), DataFrame;
+    header=6,  # first row in this dataset one row lower than in others
+)
+onsscotlanddf = CSV.read(
+    datadir("exp_raw", "20230324covidinfectionsurveyheadlinedataset_scotland.csv"), DataFrame;
+    header=5,
+)
+onswalesdf = CSV.read(
+    datadir("exp_raw", "20230324covidinfectionsurveyheadlinedataset_wales.csv"), DataFrame;
+    header=5,
+)
+
+onsdfs = [ onsenglanddf, onsnidf, onsscotlanddf, onswalesdf ]
+for (i, d) ∈ enumerate(onsdfs)
+    if i ∈ 1:3  # the different datasets have different column titles
+        lcistring = "95% Lower confidence/credible interval for percentage" 
+    else 
+        lcistring = "95% Lower credible interval for percentage" 
+    end 
+    if i ∈ 1:2  # the different datasets have different column titles
+        ucistring = "95% Upper confidence/credible interval for percentage" 
+    elseif i == 3 
+        ucistring = "95% Upper confidence/credible interval for percentage "
+    else 
+        ucistring = "95% Upper credible interval for percentage" 
+    end 
+    rename!(
+        d, 
+        Dict(
+            Symbol("Time period") => "DateRange",
+            Symbol(
+                "Estimated average % of the population testing positive for COVID-19"
+            ) => "PerCent",
+            Symbol(lcistring) => "PerCentLCI",
+            Symbol(ucistring) => "PerCentUCI",
+        )
+    ) 
+    select!(d, :DateRange, :PerCent, :PerCentLCI, :PerCentUCI)
+    filter!(:DateRange => x -> !ismissing(x), d)
+    insertcols!(
+        d,
+        :StartDate => [
+            d.DateRange[i][1:(findfirst(" to ", d.DateRange[i])[1] - 1)] 
+            for i ∈ axes(d, 1)
+        ],
+    )
+    insertcols!(
+        d,
+        :StartDateDate => Dates.Date.(d.StartDate, "dd U Y"),
+    )
+    filter!(:StartDateDate => x -> x <= Date("2022-12-31"), d)
+   # insertcols!(d, :PlotDate> d.StartDateDate + round.(d.Period ./ 2, Day, RoundUp))
+end
+
 ## Plot cases 
 
 casesplot = let 
+    a1m = 0.0
+    a2m = 0.0 
     fig = with_theme(theme_latexfonts()) do
         fig = Figure(; size=( 500, 350 ))
         axs = [ 
             Axis(
                 fig[i, 1]; 
+                xticks=(
+                    Dates.value.(
+                        Date.(
+                            [ "2020-01-01", "2021-01-01", "2022-01-01", "2023-01-01" ]
+                        ) .- Date("2020-01-01")
+                    ),
+                    [ "2020", "2021", "2022", "2023" ]
+                ),
+                yticks=WilkinsonTicks(4)
+            ) 
+            for i ∈ 1:4 
+        ]
+        axs2 = [ 
+            Axis(
+                fig[i, 3]; 
                 xticks=(
                     Dates.value.(
                         Date.(
@@ -236,25 +323,64 @@ casesplot = let
             lines!(
                 axs[region], 
                 Dates.value.(df.Date[inds] .- Date("2020-01-01")), 
-                df.NewConfirmedCases[inds] ./ 1000; 
+                10_000 .* df.NewConfirmedCases[inds] ./ POPULATION2020[region]; 
                 color=COLOURVECTOR[region],
             )            
-            text!(
-                axs[region], 0, maximum(df.NewConfirmedCases[inds] ./ 1000); 
-                text=[ "England", "Northern Ireland", "Scotland", "Wales" ][region],
-                align=( :left, :top ),
-                fontsize=11.84
-            )
             formataxis!(axs[region]; hidex=(region != 4))
+            a1m = max(
+                a1m, 
+                maximum(10_000 .* df.NewConfirmedCases[inds] ./ POPULATION2020[region])
+            )
         end
 
+        for (region, d) ∈ enumerate(onsdfs) 
+            lines!(
+                axs2[region], 
+                Dates.value.(d.StartDateDate .- Date("2020-01-01")), 
+                100 .* d.PerCent; 
+                color=COLOURVECTOR[region],
+            )     
+            band!(
+                axs2[region], 
+                Dates.value.(d.StartDateDate .- Date("2020-01-01")), 
+                100 .* d.PerCentLCI,
+                100 .* d.PerCentUCI; 
+                color=( COLOURVECTOR[region], 0.5 ),
+            )        
+            formataxis!(axs2[region]; hidex=(region != 4))
+            a2m = max(a2m, maximum(100 .* d.PerCentLCI))
+        end
+
+        for region ∈ 1:4 
+            for (ax, m) ∈ zip([ axs, axs2 ], [ a1m, a2m ])
+                text!(
+                    ax[region], 0, m; 
+                    text=[ "England", "Northern Ireland", "Scotland", "Wales" ][region],
+                    align=( :left, :top ),
+                    fontsize=11.84
+                )
+            end
+        end
+
+        linkaxes!(axs...)
+        linkaxes!(axs2...)
+
         Label(
-            fig[1:4, 0], "Weekly recorded incidence, thousands"; 
+            fig[1:4, 0], L"Weekly recorded incidence, per $10\,000$"; 
             fontsize=11.84, rotation=π/2, tellheight=false,
         )
-        Label(fig[5, 1], "Date"; fontsize=11.84, tellwidth=false)
+        Label(
+            fig[1:4, 2], L"Estimated prevalence, per $10\,000$"; 
+            fontsize=11.84, rotation=π/2, tellheight=false,
+        )
+        for c ∈ [ 1, 3 ] Label(fig[5, c], "Date"; fontsize=11.84, tellwidth=false) end
 
-        colgap!(fig.layout, 1, 5)
+        labelplots!(
+            [ "A", "B" ], fig; 
+            cols=[ 0, 2, ], rows=1
+        )
+
+        for c ∈ [ 1, 3 ] colgap!(fig.layout, c, 5) end
         rowgap!(fig.layout, 4, 5)
             
         fig
