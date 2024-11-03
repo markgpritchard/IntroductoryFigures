@@ -348,7 +348,7 @@ casesplot = let
                 color=( COLOURVECTOR[region], 0.5 ),
             )        
             formataxis!(axs2[region]; hidex=(region != 4))
-            a2m = max(a2m, maximum(100 .* d.PerCentLCI))
+            a2m = max(a2m, maximum(100 .* d.PerCentUCI))
         end
 
         for region ∈ 1:4 
