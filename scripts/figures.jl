@@ -2,8 +2,8 @@
 using DrWatson
 @quickactivate :IntroductoryFigures
 
-using CairoMakie, DifferentialEquations, MakieTeX 
-using Makie.Colors
+using CairoMakie, CSV, DataFrames, Dates, DifferentialEquations, MakieTeX, PlotFormatting
+#using Makie.Colors
 
 sirintroplot = let 
     sol1 = let 
@@ -94,22 +94,6 @@ end
 
 safesave(plotsdir("sirintroplot.pdf"), sirintroplot)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-using CSV, DataFrames, Dates
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # UK-wide data 
