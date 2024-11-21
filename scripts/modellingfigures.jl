@@ -96,30 +96,34 @@ for t ∈ 1:30
     uci[t] = uv 
 end
 
+fittedmatr = zeros(150, 100)
+for i ∈ axes(chaindf, 1)
+    b = round(Int, chaindf.beta[i] * 100, RoundDown)
+    g = round(Int, chaindf.gamma[i] * 100, RoundDown)
+    fittedmatr[b, g] += 1 
+end
+fittedmatr .*= 10/3
 
 
 fittingfig = with_theme(theme_latexfonts()) do
     bandcolour = ( COLOURVECTOR[1], 0.5 )
-    fig = Figure(; size=( 500, 350 ))
+    fig = Figure(; size=( 500, 450 ))
     ga = GridLayout(fig[1, 1])
-    ga2 = GridLayout(fig[1, 2])
     gb = GridLayout(fig[2, 1])
-    gc = GridLayout(fig[2, 2])
+    gc = GridLayout(fig[3, 1])
     
-    axa = Axis(ga[1, 1])
-    cp = contourf!(axa, 0.05:0.05:1.5, 0.05:0.05:1.0, log.(errordistances))
-    hlines!(axa, 0.21; color=:red, linestyle=:dot)
-    vlines!(axa, 0.48; color=:red, linestyle=:dot)
+    axsa = [ Axis(ga[1, i]) for i ∈ [ 1, 5 ] ]
+    cp = contourf!(axsa[1], 0.05:0.05:1.5, 0.05:0.05:1.0, log.(errordistances))
+    hlines!(axsa[1], 0.21; color=:red, linestyle=:dot)
+    vlines!(axsa[1], 0.48; color=:red, linestyle=:dot)
     cb = Colorbar(ga[1, 2], cp)
+    lines!(axsa[2], 1:30, soldf.value2; color=COLOURVECTOR[1])
+    scatter!(axsa[2], 1:30, mockdata[:, 2]; color=:black, markersize=3)
     Label(ga[1, 0], L"$\gamma$"; fontsize=11.84, rotation=π/2, tellheight=false)
     Label(ga[2, 1], L"$\beta$"; fontsize=11.84, tellwidth=false)
     Label(ga[1, 3], "log square error"; fontsize=11.84, rotation=3π/2, tellheight=false)
-
-    axa2 = Axis(ga2[1, 1])
-    lines!(axa2, 1:30, soldf.value2; color=COLOURVECTOR[1])
-    scatter!(axa2, 1:30, mockdata[:, 2]; color=:black, markersize=3)
-    Label(ga2[1, 0], "prevalence"; fontsize=11.84, rotation=π/2, tellheight=false)
-    Label(ga2[2, 1], "time"; fontsize=11.84, tellwidth=false)
+    Label(ga[1, 4], "prevalence"; fontsize=11.84, rotation=π/2, tellheight=false)
+    Label(ga[2, 5], "time"; fontsize=11.84, tellwidth=false)
 
     axsb1 = [ Axis(gb[i, 1]; xticks=WilkinsonTicks(3), yticks=WilkinsonTicks(3)) for i ∈ 1:2 ]
     axsb2 = [ Axis(gb[i, 3]; xticks=WilkinsonTicks(3), yticks=WilkinsonTicks(3)) for i ∈ 1:2 ]
@@ -136,34 +140,45 @@ fittingfig = with_theme(theme_latexfonts()) do
     Label(gb[2, 0], L"$\gamma$"; fontsize=11.84, rotation=π/2, tellheight=false)
     Label(gb[3, 1], "iteration"; fontsize=11.84, tellwidth=false)
     Label(gb[1:2, 2], "density"; fontsize=11.84, rotation=π/2, tellheight=false)
-    #Label(gb[2, 3], L"$\beta$"; fontsize=11.84, tellwidth=false)
-    #Label(gb[4, 3], L"$\gamma$"; fontsize=11.84, tellwidth=false)
+    Label(gb[3, 3], "fitted value"; fontsize=11.84, tellwidth=false)
 
-    axc = Axis(gc[1, 1])
-    lines!(axc, 1:30, medians; color=COLOURVECTOR[1])
-    band!(axc, 1:30, lci, uci; color=bandcolour)
-    scatter!(axc, 1:30, mockdata[:, 2]; color=:black, markersize=3)
-    Label(gc[1, 0], "prevalence"; fontsize=11.84, rotation=π/2, tellheight=false)
-    Label(gc[2, 1], "time"; fontsize=11.84, tellwidth=false)
+    axsc = [ Axis(gc[1, i]) for i ∈ [ 1, 5 ] ]
+    cp2 = contourf!(axsc[1], (0.01:0.01:1.5), (0.01:0.01:1.0), fittedmatr)
+    hlines!(axsc[1], 0.21; color=:red, linestyle=:dot)
+    vlines!(axsc[1], 0.48; color=:red, linestyle=:dot)
+    cb2 = Colorbar(gc[1, 2], cp2)
+    lines!(axsc[2], 1:30, medians; color=COLOURVECTOR[1])
+    band!(axsc[2], 1:30, lci, uci; color=bandcolour)
+    scatter!(axsc[2], 1:30, mockdata[:, 2]; color=:black, markersize=3)
+    Label(gc[1, 0], L"$\gamma$"; fontsize=11.84, rotation=π/2, tellheight=false)
+    Label(gc[2, 1], L"$\beta$"; fontsize=11.84, tellwidth=false)
+    Label(gc[1, 3], "density"; fontsize=11.84, rotation=3π/2, tellheight=false)
+    Label(gc[1, 4], "prevalence"; fontsize=11.84, rotation=π/2, tellheight=false)
+    Label(gc[2, 5], "time"; fontsize=11.84, tellwidth=false)
 
-    formataxis!(axa)
-    formataxis!(axa2)
+    formataxis!(axsa)
     formataxis!(cb)
     formataxis!(axsb1[1]; hidex=true)
     formataxis!(axsb1[2])
     formataxis!(axsb2)
-    formataxis!(axc)
+    formataxis!(axsc)
 
-    for c ∈ [ 1, 2, 3 ] colgap!(ga, c, 5) end
+    for c ∈ [ 1, 2, 3, 5 ] colgap!(ga, c, 5) end
     rowgap!(ga, 1, 5)
-    colgap!(ga2, 1, 5)
-    rowgap!(ga2, 1, 5)
     for c ∈ [ 1, 3 ] colgap!(gb, c, 5) end
     rowgap!(gb, 2, 5)
-    colgap!(gc, 1, 5)
+    for c ∈ [ 1, 2, 3, 5 ] colgap!(gc, c, 5) end
     rowgap!(gc, 1, 5)
 
-    labelplots!([ "A", "B", "C", "D" ], [ ga, ga2, gb, gc ]; rows=1)
+    for r ∈ 1:2 rowgap!(fig.layout, r, 6) end
+
+    rowsize!(fig.layout, 2, Auto(1.5))
+    labelplots!(
+        [ "A", "B", "C", "D", "E" ], 
+        [ ga, ga, gb, gc, gc ]; 
+        cols=[ 1, 4, 1, 1, 4 ],
+        rows=1
+    )
 
     fig 
 end
