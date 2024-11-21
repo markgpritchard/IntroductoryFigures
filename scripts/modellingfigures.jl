@@ -96,13 +96,13 @@ for t ∈ 1:30
     uci[t] = uv 
 end
 
-fittedmatr = zeros(150, 100)
+fittedmatr = zeros(75, 50)
 for i ∈ axes(chaindf, 1)
-    b = round(Int, chaindf.beta[i] * 100, RoundDown)
-    g = round(Int, chaindf.gamma[i] * 100, RoundDown)
+    b = round(Int, chaindf.beta[i] * 50, RoundDown)
+    g = round(Int, chaindf.gamma[i] * 50, RoundDown)
     fittedmatr[b, g] += 1 
 end
-fittedmatr .*= 10/3
+fittedmatr .*= 2.5/3
 
 
 fittingfig = with_theme(theme_latexfonts()) do
@@ -143,7 +143,7 @@ fittingfig = with_theme(theme_latexfonts()) do
     Label(gb[3, 3], "fitted value"; fontsize=11.84, tellwidth=false)
 
     axsc = [ Axis(gc[1, i]) for i ∈ [ 1, 5 ] ]
-    cp2 = contourf!(axsc[1], (0.01:0.01:1.5), (0.01:0.01:1.0), fittedmatr)
+    cp2 = contourf!(axsc[1], (0.01:0.02:1.5)[17:28], (0.01:0.02:1.0)[6:13], fittedmatr[17:28, 6:13])
     hlines!(axsc[1], 0.21; color=:red, linestyle=:dot)
     vlines!(axsc[1], 0.48; color=:red, linestyle=:dot)
     cb2 = Colorbar(gc[1, 2], cp2)
