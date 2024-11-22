@@ -142,8 +142,11 @@ fittingfig = with_theme(theme_latexfonts()) do
     Label(gb[1:2, 2], "density"; fontsize=11.84, rotation=π/2, tellheight=false)
     Label(gb[3, 3], "fitted value"; fontsize=11.84, tellwidth=false)
 
-    axsc = [ Axis(gc[1, i]) for i ∈ [ 1, 5 ] ]
-    cp2 = contourf!(axsc[1], (0.01:0.02:1.5)[17:28], (0.01:0.02:1.0)[6:13], fittedmatr[17:28, 6:13])
+    axsc = [ 
+        Axis(gc[1, 1]; xticks=WilkinsonTicks(3), yticks=WilkinsonTicks(3)),
+        Axis(gc[1, 5])
+    ]
+    cp2 = contourf!(axsc[1], (0.03:0.02:1.51)[17:28], (0.03:0.02:1.01)[6:13], fittedmatr[17:28, 6:13])
     hlines!(axsc[1], 0.21; color=:red, linestyle=:dot)
     vlines!(axsc[1], 0.48; color=:red, linestyle=:dot)
     cb2 = Colorbar(gc[1, 2], cp2)
