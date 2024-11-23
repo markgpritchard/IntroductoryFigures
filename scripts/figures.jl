@@ -603,12 +603,45 @@ indexplot = let
                     align=( :right, :top ),
                     fontsize=11.84
                 )
-                formataxis!(ax; hidex=(region != 4))
+                if region == 4 
+                    formataxis!(ax; trimspines=true, hidespines=( :t, :r ))
+                else
+                    formataxis!(
+                        ax; 
+                        hidex=true, hidexticks=true, 
+                        trimspines=true, hidespines=( :t, :r, :b )
+                    )
+                end
             end
         end
 
+        axl = [
+            Axis(
+                fig[1:4, j];
+                xticks=(
+                    Dates.value.(
+                        Date.(
+                            [ "2020-01-01", "2021-01-01", "2022-01-01", "2023-01-01" ]
+                        ) .- Date("2020-01-01")
+                    )
+                )
+            )
+            for j ∈ [ 1, 3 ]
+        ]
+        
+        for ax in axl
+            formataxis!(
+                ax; 
+                hidex=true, hidexticks=true, hidey=true, hideyticks=true, 
+                trimspines=true, hidespines=( :l, :r, :t, :b ), #xgridvisible=true,
+            )
+            ax.xgridstyle=( :dot, :dense ) 
+            ax.xgridwidth = 1
+            ax.xgridvisible = true
+        end
 
         linkaxes!(axs1..., axs2...)
+        linkxaxes!(axs1..., axs2..., axl...)
 
         Label(
             fig[1:4, 0], "Government response index"; 
