@@ -1963,11 +1963,11 @@ version = "0.3.3"
 
 [[deps.PlotFormatting]]
 deps = ["CairoMakie", "Makie"]
-git-tree-sha1 = "af333c126bdd92197df8d1bfe00a0dd3dfa7cba4"
+git-tree-sha1 = "96b0fb4636ac7523341c8587a9eaaa75431a98e4"
 repo-rev = "main"
 repo-url = "https://github.com/markgpritchard/PlotFormatting.jl"
 uuid = "fafed4c3-eaab-4ef5-9b79-61964d847033"
-version = "0.1.1"
+version = "0.2.1"
 
 [[deps.PlotUtils]]
 deps = ["ColorSchemes", "Colors", "Dates", "PrecompileTools", "Printf", "Random", "Reexport", "Statistics"]

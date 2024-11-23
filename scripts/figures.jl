@@ -3,7 +3,6 @@ using DrWatson
 @quickactivate :IntroductoryFigures
 
 using CairoMakie, CSV, DataFrames, Dates, DifferentialEquations, MakieTeX, PlotFormatting
-#using Makie.Colors
 
 sirintroplot = let 
     sol1 = let 
@@ -27,7 +26,7 @@ sirintroplot = let
 
     fig = with_theme(theme_latexfonts()) do
 
-        fig = Figure(; size=( 500, 350 ))
+        fig = Figure(; size=( 500, 250 ))
 
         ga = GridLayout(fig[1, 1:2])
         gb = GridLayout(fig[2, 1])
@@ -36,52 +35,35 @@ sirintroplot = let
         lt1 = LTeX(ga[1, 1], td1; tellwidth=false)
         lt2 = LTeX(ga[1, 2], td2; tellwidth=false)
 
-        ax1a = Axis(gb[1, 1])
-        ax1b = Axis(gb[2, 1])
-        ax2a = Axis(gc[1, 1])
-        ax2b = Axis(gc[2, 1])
+        ax1 = Axis(gb[1, 1])
+        ax2 = Axis(gc[1, 1])
 
         lines!(
-            ax1a, sol1.t, [ sol1.u[t][1] for t ∈ eachindex(sol1.t) ]; 
+            ax1, sol1.t, [ sol1.u[t][1] for t ∈ eachindex(sol1.t) ]; 
             color=COLOURVECTOR[1]
         )
         lines!(
-            ax1b, sol1.t, [ sol1.u[t][1] for t ∈ eachindex(sol1.t) ]; 
+            ax2, sol2.t, [ sol2.u[t][1] + sol2.u[t][2] for t ∈ eachindex(sol2.t) ]; 
             color=COLOURVECTOR[1]
         )
-        lines!(
-            ax2a, sol2.t, [ sol2.u[t][1] + sol2.u[t][2] for t ∈ eachindex(sol2.t) ]; 
-            color=COLOURVECTOR[1]
-        )
-        lines!(
-            ax2b, sol2.t, 2 .* [ sol2.u[t][2] for t ∈ eachindex(sol2.t) ]; 
-            color=COLOURVECTOR[1]
-        )
-        for ax ∈ [ ax1a, ax1b, ax2a, ax2b ]
-            vlines!(ax, 1; color=:black, linestyle=:dot)
+        for ax ∈ [ ax1, ax2 ]
+            vlines!(ax, 1; color=:gray, linestyle=( :dot, :dense ), linewidth=1)
         end
 
-        linkaxes!(ax1a, ax1b, ax2a, ax2b)
-        formataxis!(ax1a; hidex=true)
-        formataxis!(ax1b)
-        formataxis!(ax2a; hidex=true)
-        formataxis!(ax2b)
+        linkaxes!(ax1, ax2)
+        formataxis!(ax1; trimspines=true, hidespines=( :r, :t ))
+        formataxis!(ax2; trimspines=true, hidespines=( :r, :t ))
 
         for gl ∈ [ gb, gc ]
             Label(
                 gl[1, 0], L"Proportion\\infectious$$"; 
                 fontsize=11.84, rotation=π/2, tellheight=false
             )
-            Label(
-                gl[2, 0], L"Generation \\ interval$$"; 
-                fontsize=11.84, rotation=π/2, tellheight=false
-            )
-            Label(gl[3, 1], L"Time, multiple of $\gamma$"; fontsize=11.84, tellwidth=false)
+            Label(gl[2, 1], L"Time, multiple of $\gamma$"; fontsize=11.84, tellwidth=false)
     
             colgap!(gl, 1, 5)
-            rowgap!(gl, 2, 5)
+            rowgap!(gl, 1, 5)
         end
-
 
         labelplots!(
             [ "A", "B", "C", "D" ], [ ga, ga, gb, gc ]; 
@@ -198,7 +180,6 @@ filter!(:Jurisdiction => x -> x == "STATE_TOTAL", df)
 
 leftjoin!(df, regioncodedf; on=:RegionCode)
 
-df
 
 
 ## ONS data 
@@ -310,7 +291,6 @@ casesplot = let
                 10_000 .* df.NewConfirmedCases[inds] ./ POPULATION2020[region]; 
                 color=COLOURVECTOR[region],
             )            
-            formataxis!(axs[region]; hidex=(region != 4))
             a1m = max(
                 a1m, 
                 maximum(10_000 .* df.NewConfirmedCases[inds] ./ POPULATION2020[region])
@@ -331,11 +311,20 @@ casesplot = let
                 100 .* d.PerCentUCI; 
                 color=( COLOURVECTOR[region], 0.5 ),
             )        
-            formataxis!(axs2[region]; hidex=(region != 4))
             a2m = max(a2m, maximum(100 .* d.PerCentUCI))
         end
 
         for region ∈ 1:4 
+            for ax ∈ [ axs, axs2 ]
+                if region == 4 
+                    formataxis!(ax[region]; trimspines=true, hidespines=( :r, :t ))
+                else
+                    formataxis!(
+                        ax[region]; 
+                        hidex=true, hidexticks=true, trimspines=true, hidespines=( :r, :t, :b )
+                    )
+                end
+            end
             for (ax, m) ∈ zip([ axs, axs2 ], [ a1m, a2m ])
                 text!(
                     ax[region], 0, m; 
@@ -346,8 +335,34 @@ casesplot = let
             end
         end
 
+        axl = [
+            Axis(
+                fig[1:4, j];
+                xticks=(
+                    Dates.value.(
+                        Date.(
+                            [ "2020-01-01", "2021-01-01", "2022-01-01", "2023-01-01" ]
+                        ) .- Date("2020-01-01")
+                    )
+                )
+            )
+            for j ∈ [ 1, 3 ]
+        ]
+        
+        for ax in axl
+            formataxis!(
+                ax; 
+                hidex=true, hidexticks=true, hidey=true, hideyticks=true, 
+                trimspines=true, hidespines=( :l, :r, :t, :b ), #xgridvisible=true,
+            )
+            ax.xgridstyle=( :dot, :dense ) 
+            ax.xgridwidth = 1
+            ax.xgridvisible = true
+        end
+
         linkaxes!(axs...)
         linkaxes!(axs2...)
+        linkxaxes!(axs..., axs2..., axl...)
 
         Label(
             fig[1:4, 0], L"Weekly recorded incidence, per $10\,000$"; 
@@ -399,7 +414,6 @@ function plotinds(vec)
     return plotinds 
 end
  
-
 interventionsplot = let 
     fig = with_theme(theme_latexfonts()) do
         fig = Figure(; size=( 500, 650 ))
@@ -504,11 +518,9 @@ interventionsplot = let
                     )
                 end
             end
-
-
         end
 
-        formataxis!(ax)
+        formataxis!(ax; trimspines=true, hidespines=( :t, :r ))
         ylims!(ax, -15.9, 0)
 
         Label(fig[2, 1], "Date"; fontsize=11.84, tellwidth=false)
