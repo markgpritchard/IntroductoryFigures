@@ -520,7 +520,11 @@ interventionsplot = let
             end
         end
 
-        formataxis!(ax; trimspines=true, hidespines=( :t, :r ))
+        formataxis!(ax; trimspines=true, hidespines=( :t, :l, :r ))
+        ax.xgridstyle=( :dot, :dense ) 
+        ax.xgridwidth = 1
+        ax.xgridvisible = true
+        ax.yticksvisible = false
         ylims!(ax, -15.9, 0)
 
         Label(fig[2, 1], "Date"; fontsize=11.84, tellwidth=false)
