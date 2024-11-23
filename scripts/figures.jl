@@ -40,11 +40,11 @@ sirintroplot = let
 
         lines!(
             ax1, sol1.t, [ sol1.u[t][1] for t ∈ eachindex(sol1.t) ]; 
-            color=COLOURVECTOR[1]
+            color=COLOURVECTOR[1], linewidth =1,
         )
         lines!(
             ax2, sol2.t, [ sol2.u[t][1] + sol2.u[t][2] for t ∈ eachindex(sol2.t) ]; 
-            color=COLOURVECTOR[1]
+            color=COLOURVECTOR[1], linewidth =1,
         )
         for ax ∈ [ ax1, ax2 ]
             vlines!(ax, 1; color=:gray, linestyle=( :dot, :dense ), linewidth=1)
@@ -289,7 +289,7 @@ casesplot = let
                 axs[region], 
                 Dates.value.(df.Date[inds] .- Date("2020-01-01")), 
                 10_000 .* df.NewConfirmedCases[inds] ./ POPULATION2020[region]; 
-                color=COLOURVECTOR[region],
+                color=COLOURVECTOR[region], linewidth =1,
             )            
             a1m = max(
                 a1m, 
@@ -302,7 +302,7 @@ casesplot = let
                 axs2[region], 
                 Dates.value.(d.StartDateDate .- Date("2020-01-01")), 
                 100 .* d.PerCent; 
-                color=COLOURVECTOR[region],
+                color=COLOURVECTOR[region], linewidth =1,
             )     
             band!(
                 axs2[region], 
@@ -514,7 +514,7 @@ interventionsplot = let
                                 (d + 0.875 - 0.15 * region) + sv[i] 
                             for i ∈ eachindex(sv) 
                         ],
-                        color=COLOURVECTOR[region]
+                        color=COLOURVECTOR[region], linewidth =1,
                     )
                 end
             end
@@ -586,13 +586,13 @@ indexplot = let
                 axs1[region], 
                 Dates.value.(df.Date[inds] .- Date("2020-01-01")), 
                 df.GovernmentResponseIndex_WeightedAverage[inds]; 
-                color=COLOURVECTOR[region],
+                color=COLOURVECTOR[region], linewidth =1,
             )            
             lines!(
                 axs2[region], 
                 Dates.value.(df.Date[inds] .- Date("2020-01-01")), 
                 df.StringencyIndex_WeightedAverage[inds]; 
-                color=COLOURVECTOR[region],
+                color=COLOURVECTOR[region], linewidth =1,
             )   
             for ax ∈ [ axs1[region], axs2[region] ]
                 text!(

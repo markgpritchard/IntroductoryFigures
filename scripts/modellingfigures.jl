@@ -2,7 +2,8 @@
 using DrWatson
 @quickactivate :IntroductoryFigures
 
-using CairoMakie, DataFrames, DifferentialEquations, Distributions, PlotFormatting, Random, StochasticTransitionModels, Turing 
+using CairoMakie, DataFrames, DifferentialEquations, Distributions, PlotFormatting, Random
+using StochasticTransitionModels, Turing 
 
 function sisrates(u, t)
     s, i = u
@@ -54,7 +55,6 @@ println(p)
 sol = solve(prob; p, saveat=1)
 soldf = DataFrame(sol) 
 
-
 @model function sisfit(
     data, prob;
     betaprior=Uniform(0.05, 1.5), gammaprior=Uniform(0.05, 1),
@@ -74,11 +74,11 @@ end
 
 model = sisfit(mockdata, prob)
 
-chain = sample(model, NUTS(), MCMCThreads(), 1000, 3)
+chain = sample(model, NUTS(), MCMCThreads(), 4000, 4)
 chaindf = DataFrame(chain)
 
-outputmat = zeros(30, 1000)
-for j ∈ 1:1000
+outputmat = zeros(30, 16_000)
+for j ∈ 1:16_000
     p = [ chaindf.beta[j], chaindf.gamma[j] ]
     sol = solve(prob; p, saveat=1)
     for t ∈ 1:30
@@ -102,8 +102,7 @@ for i ∈ axes(chaindf, 1)
     g = round(Int, chaindf.gamma[i] * 50, RoundDown)
     fittedmatr[b, g] += 1 
 end
-fittedmatr .*= 2.5/3
-
+fittedmatr .*= 2.5/16
 
 fittingfig = with_theme(theme_latexfonts()) do
     bandcolour = ( COLOURVECTOR[1], 0.5 )
@@ -114,10 +113,10 @@ fittingfig = with_theme(theme_latexfonts()) do
     
     axsa = [ Axis(ga[1, i]) for i ∈ [ 1, 5 ] ]
     cp = contourf!(axsa[1], 0.05:0.05:1.5, 0.05:0.05:1.0, log.(errordistances))
-    hlines!(axsa[1], 0.21; color=:red, linestyle=:dot)
-    vlines!(axsa[1], 0.48; color=:red, linestyle=:dot)
+    hlines!(axsa[1], 0.21; color=:red, linestyle=( :dot, :dense ), linewidth =1,)
+    vlines!(axsa[1], 0.48; color=:red, linestyle=( :dot, :dense ), linewidth =1,)
     cb = Colorbar(ga[1, 2], cp)
-    lines!(axsa[2], 1:30, soldf.value2; color=COLOURVECTOR[1])
+    lines!(axsa[2], 1:30, soldf.value2; color=COLOURVECTOR[1], linewidth =1,)
     scatter!(axsa[2], 1:30, mockdata[:, 2]; color=:black, markersize=3)
     Label(ga[1, 0], L"$\gamma$"; fontsize=11.84, rotation=π/2, tellheight=false)
     Label(ga[2, 1], L"$\beta$"; fontsize=11.84, tellwidth=false)
@@ -129,13 +128,19 @@ fittingfig = with_theme(theme_latexfonts()) do
     axsb2 = [ Axis(gb[i, 3]; xticks=WilkinsonTicks(3), yticks=WilkinsonTicks(3)) for i ∈ 1:2 ]
     for ch ∈ 3:-1:1
         d = filter(:chain => x -> x == ch, chaindf)
-        lines!(axsb1[1], d.iteration, d.beta; color=COLOURVECTOR[ch])
-        lines!(axsb1[2], d.iteration, d.gamma; color=COLOURVECTOR[ch])
-        density!(axsb2[1], d.beta; color=( :white, 0 ), strokecolor=COLOURVECTOR[ch], strokewidth = 1)
-        density!(axsb2[2], d.gamma; color=( :white, 0 ), strokecolor=COLOURVECTOR[ch], strokewidth = 1)
+        lines!(axsb1[1], d.iteration, d.beta; color=COLOURVECTOR[ch], linewidth =1,)
+        lines!(axsb1[2], d.iteration, d.gamma; color=COLOURVECTOR[ch], linewidth =1,)
+        density!(
+            axsb2[1], d.beta; 
+            color=( :white, 0 ), strokecolor=COLOURVECTOR[ch], strokewidth=1
+        )
+        density!(
+            axsb2[2], d.gamma; 
+            color=( :white, 0 ), strokecolor=COLOURVECTOR[ch], strokewidth=1
+        )
     end
-    vlines!(axsb2[1], 0.48; color=:red, linestyle=:dot)
-    vlines!(axsb2[2], 0.21; color=:red, linestyle=:dot)
+    vlines!(axsb2[1], 0.48; color=:red, linestyle=( :dot, :dense ), linewidth =1,)
+    vlines!(axsb2[2], 0.21; color=:red, linestyle=( :dot, :dense ), linewidth =1,)
     Label(gb[1, 0], L"$\beta$"; fontsize=11.84, rotation=π/2, tellheight=false)
     Label(gb[2, 0], L"$\gamma$"; fontsize=11.84, rotation=π/2, tellheight=false)
     Label(gb[3, 1], "iteration"; fontsize=11.84, tellwidth=false)
@@ -146,11 +151,13 @@ fittingfig = with_theme(theme_latexfonts()) do
         Axis(gc[1, 1]; xticks=WilkinsonTicks(3), yticks=WilkinsonTicks(3)),
         Axis(gc[1, 5])
     ]
-    cp2 = contourf!(axsc[1], (0.03:0.02:1.51)[17:28], (0.03:0.02:1.01)[6:13], fittedmatr[17:28, 6:13])
-    hlines!(axsc[1], 0.21; color=:red, linestyle=:dot)
-    vlines!(axsc[1], 0.48; color=:red, linestyle=:dot)
+    cp2 = contourf!(
+        axsc[1], (0.03:0.02:1.51)[17:28], (0.03:0.02:1.01)[6:13], fittedmatr[17:28, 6:13]
+    )
+    hlines!(axsc[1], 0.21; color=:red, linestyle=( :dot, :dense ), linewidth =1,)
+    vlines!(axsc[1], 0.48; color=:red, linestyle=( :dot, :dense ), linewidth =1,)
     cb2 = Colorbar(gc[1, 2], cp2)
-    lines!(axsc[2], 1:30, medians; color=COLOURVECTOR[1])
+    lines!(axsc[2], 1:30, medians; color=COLOURVECTOR[1], linewidth =1,)
     band!(axsc[2], 1:30, lci, uci; color=bandcolour)
     scatter!(axsc[2], 1:30, mockdata[:, 2]; color=:black, markersize=3)
     Label(gc[1, 0], L"$\gamma$"; fontsize=11.84, rotation=π/2, tellheight=false)
@@ -159,12 +166,14 @@ fittingfig = with_theme(theme_latexfonts()) do
     Label(gc[1, 4], "prevalence"; fontsize=11.84, rotation=π/2, tellheight=false)
     Label(gc[2, 5], "time"; fontsize=11.84, tellwidth=false)
 
-    formataxis!(axsa)
+    formataxis!(axsa[1])
+    formataxis!(axsa[2]; trimspines=true, hidespines=( :t, :r ))
     formataxis!(cb)
     formataxis!(axsb1[1]; hidex=true)
     formataxis!(axsb1[2])
-    formataxis!(axsb2)
-    formataxis!(axsc)
+    formataxis!(axsb2; trimspines=true, hidespines=( :t, :r ))
+    formataxis!(axsc[1])
+    formataxis!(axsc[2]; trimspines=true, hidespines=( :t, :r ))
 
     for c ∈ [ 1, 2, 3, 5 ] colgap!(ga, c, 5) end
     rowgap!(ga, 1, 5)
